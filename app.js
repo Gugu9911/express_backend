@@ -2,7 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const userRouter = require('./routes/users')
 const loginRouter = require('./routes/login')
-const config = require('./models/utils/config')
+const config = require('./utils/config')
 
 const app = express()
 
