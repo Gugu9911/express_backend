@@ -2,6 +2,7 @@ const express = require('express')
 const cors = require('cors')
 const userRouter = require('./routes/users')
 const loginRouter = require('./routes/login')
+const notesRouter = require('./routes/notes')
 const config = require('./utils/config')
 
 const app = express()
@@ -16,6 +17,7 @@ app.use(cors())
 app.use(express.json())
 app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)
+app.use('/api/notes', notesRouter)
 
 const PORT = process.env.PORT || 5001
 app.listen(PORT, () => {

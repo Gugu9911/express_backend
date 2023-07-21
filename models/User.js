@@ -12,7 +12,13 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  interest: String
+  interest: String,
+  notes: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Note'
+    }
+  ],
 })
 
 const User = mongoose.model('User', UserSchema)

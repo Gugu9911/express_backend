@@ -2,6 +2,7 @@ const express = require('express');
 const User = require('../models/User'); 
 const bcrypt = require('bcrypt');
 const loginRouter = express.Router();
+const jwt = require('jsonwebtoken');
 
 
 loginRouter.post('/', async (req, res) => {
@@ -23,7 +24,18 @@ loginRouter.post('/', async (req, res) => {
         });
     }
 
-    res.status(200).send({ username: user.username, nickname: user.nickname, interest: user.interest });
+    const userForToken = {
+        username: user.username,
+        id: user._id,
+    };
+    const token = jwt.sign(
+        userForToken,
+        process.env.JWT_SECRET,
+    );
+
+    res
+    .status(200).
+    send({ token,username: user.username, nickname: user.nickname, interest: user.interest, id: user._id });
 });
 
 module.exports = loginRouter;

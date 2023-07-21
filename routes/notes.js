@@ -1,128 +1,78 @@
 const express = require('express');
-const router = express.Router();
+const Notesrouter = express.Router();
 const Note = require('../models/Note');
 const User = require('../models/User');
-const auth = require('../middleware/auth'); // Assuming you have auth middleware
-const multer = require('multer');
-const { CloudinaryStorage } = require('multer-storage-cloudinary');
-const cloudinary = require('../utils/cloudinary');
+const cloudinary = require('cloudinary').v2;
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
+const upload = multer({ dest: 'uploads/' }); // adjust this to your needs
 
-const auth = async (req, res, next) => {
-    try {
-        const token = req.header('Authorization').replace('Bearer ', '');
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findOne({ _id: decoded._id, 'tokens.token': token });
-        if (!user) {
-            throw new Error();
-        }
-        req.token = token;
-        req.user = user;
-        next();
-    } catch (e) {
-        res.status(401).send({ error: 'Please authenticate.' });
-    }
-};
+const getTokenFrom = (request, response, next) => {
+  const authorization = request.get('authorization')
+  if (authorization && authorization.toLowerCase().startsWith('bearer ')) {
+    request.token = authorization.substring(7)
+  } else {
+    request.token = null
+  }
+  next()
+}
+const USER_FIELDS = { username: 1, name: 1 };
+Notesrouter.get('/', async (req, res) => {
+  const notes = await Note.find({}).populate('user', USER_FIELDS);
+  res.json(notes);
+})
 
+Notesrouter.get('/:id', async (req, res) => {
+  const note = await Note.findById(req.params.id).populate('user', USER_FIELDS);
+  if (note) {
+    res.json(note);
+  } else {
+    res.status(404).end();
+  }
+})
 
-// Middleware for image uploading
-const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: {
-      folder: 'notes',
-      format: async (req, file) => {
-        // get the original extension and return it
-        return path.extname(file.originalname);
-      }, 
-      public_id: (req, file) => {
-        // get the original name and remove the extension
-        return path.basename(file.originalname, path.extname(file.originalname));
-      },
-    },
-  });
-  const parser = multer({ storage: storage });
-  
-
-// Get all notes for a specific user
-router.get('/user/:userId', auth, async (req, res) => {
-  try {
-    const user = await User.findById(req.params.userId); 
-    if (!user) return res.status(404).json({msg: 'User not found'});
-    
-    const notes = await Note.find({ user: req.params.userId });
+Notesrouter.get('/users/:id', async (req, res) => {
+  const notes = await Note.find({ user: req.params.id }).populate('user', USER_FIELDS);
+  if (notes) {
     res.json(notes);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+  } else {
+    res.status(404).end();
   }
 });
 
-// Get a specific note
-router.get('/:id', auth, async (req, res) => {
-  try {
-    const note = await Note.findById(req.params.id);
-    if (!note) return res.status(404).json({msg: 'Note not found'});
-    res.json(note);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+Notesrouter.post('/', getTokenFrom, upload.array('images'), async (request, response) =>{
+  const body = request.body
+  const decodedToken = jwt.verify(request.token, process.env.SECRET)
+
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'token invalid' })
   }
-});
-
-// Add a new note
-router.post('/', [auth, parser.array("images", 5)], async (req, res) => {
-  try {
-    const newNote = new Note({
-      title: req.body.title,
-      content: req.body.content,
-      images: req.files.map(file => file.path),
-      user: req.body.user 
-    });
-
-    const note = await newNote.save();
-    res.json(note);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+  if (!body.title) {
+    return response.status(400).end()
   }
-});
 
-// Update a note
-router.put('/:id', [auth, parser.array("images", 5)], async (req, res) => {
-  try {
-    let note = await Note.findById(req.params.id);
-    if (!note) return res.status(404).json({msg: 'Note not found'});
+  const user = await User.findById(decodedToken.id)
 
-    note = await Note.findByIdAndUpdate(
-      req.params.id, 
-      { 
-        title: req.body.title,
-        content: req.body.content,
-        images: req.files.map(file => file.path),
-      }, 
-      { new: true }
-    );
-
-    res.json(note);
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
+  // Upload the files to Cloudinary
+  let imageUrls = [];
+  if (request.files) {
+    for (const file of request.files) {
+      const result = await cloudinary.uploader.upload(file.path)
+      imageUrls.push(result.secure_url);
+    }
   }
-});
+  const note = new Note({
+    title: body.title,
+    author: user.name,
+    content: body.content,
+    imagesurl: imageUrls,
+    user : user._id
+  })
 
-// Delete a note
-router.delete('/:id', auth, async (req, res) => {
-  try {
-    let note = await Note.findById(req.params.id);
-    if (!note) return res.status(404).json({msg: 'Note not found'});
+  const savedNote = await note.save()
+  user.notes = user.notes.concat(savedNote._id)
+  await user.save()
+  response.json(savedNote)
+})
 
-    await Note.findByIdAndRemove(req.params.id);
-
-    res.json({msg: 'Note removed'});
-  } catch (err) {
-    console.error(err.message);
-    res.status(500).send('Server Error');
-  }
-});
-
-module.exports = router;
+module.exports = Notesrouter;
