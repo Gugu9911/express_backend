@@ -4,6 +4,8 @@ const userRouter = require('./routes/users')
 const loginRouter = require('./routes/login')
 const notesRouter = require('./routes/notes')
 const config = require('./utils/config')
+const middleware = require('./utils/middleware')
+
 
 const app = express()
 
@@ -13,8 +15,10 @@ mongoose.connect(config.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology
   .then(() => console.log('Connected to MongoDB'))
   .catch((err) => console.log('Failed to connect to MongoDB', err))
 
+
 app.use(cors())
 app.use(express.json())
+app.use(middleware.getTokenFrom)
 app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/notes', notesRouter)

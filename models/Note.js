@@ -13,10 +13,8 @@ const NoteSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  imagesurl: [
-    { 
-      type: String, // This will allow an array of ObjectIds
-    }
+  imageurl: [
+    { type: String, }
   ],
   user: {
     type: mongoose.Schema.Types.ObjectId,
