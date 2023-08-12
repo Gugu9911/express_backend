@@ -4,6 +4,7 @@ const userRouter = require('./routes/users')
 const loginRouter = require('./routes/login')
 const notesRouter = require('./routes/notes')
 const searchRouter = require('./routes/search')
+const likeRouter = require('./routes/like')
 const config = require('./utils/config')
 const middleware = require('./utils/middleware')
 
@@ -24,6 +25,7 @@ app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/notes', notesRouter)
 app.use('/api/search', searchRouter)
+app.use('/api/notes/like', likeRouter)
 
 const PORT = process.env.PORT || 5001
 app.listen(PORT, () => {

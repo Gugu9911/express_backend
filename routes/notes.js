@@ -5,6 +5,9 @@ const User = require('../models/User');
 const cloudinary = require('../utils/cloudinary');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
+const Likerouter = express.Router();
+
+
 // const { default: note } = require('../../react_frontend/src/services/note');
 const upload = multer({ dest: 'uploads/' }); 
 require('dotenv').config()
