@@ -99,9 +99,7 @@ Notesrouter.put('/:id', upload.array('images'), async (request, response) => {
     const urlsToDelete = Array.isArray(body.deleteImageURLs) ? body.deleteImageURLs : [body.deleteImageURLs];
     imageUrls = imageUrls.filter(url => !urlsToDelete.includes(url));
   }
-  console.log(imageUrls);
-
-
+  // Upload the files to Cloudinary
   if (request.files) {
       for (let file of request.files) {
           const result = await cloudinary.uploader.upload(file.path);
@@ -120,5 +118,18 @@ Notesrouter.put('/:id', upload.array('images'), async (request, response) => {
   response.json(savedNote);
 });
 
+
+Notesrouter.delete('/:id', async (request, response) => {
+  const decodedToken = jwt.verify(request.token, process.env.JWT_SECRET);
+  const note = await Note.findById(request.params.id);
+  if (note.user.toString() !== decodedToken.id.toString()) {
+    return response.status(401).json({ error: 'only the creator can delete notes' });
+  }
+  if (!note) {
+    return response.status(404).json({ error: 'note not found' });
+  }
+  await Note.findByIdAndRemove(request.params.id);
+  response.status(204).end();
+});
 
 module.exports = Notesrouter;

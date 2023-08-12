@@ -3,6 +3,7 @@ const cors = require('cors')
 const userRouter = require('./routes/users')
 const loginRouter = require('./routes/login')
 const notesRouter = require('./routes/notes')
+const searchRouter = require('./routes/search')
 const config = require('./utils/config')
 const middleware = require('./utils/middleware')
 
@@ -22,6 +23,7 @@ app.use(middleware.getTokenFrom)
 app.use('/api/users', userRouter)
 app.use('/api/login', loginRouter)
 app.use('/api/notes', notesRouter)
+app.use('/api/search', searchRouter)
 
 const PORT = process.env.PORT || 5001
 app.listen(PORT, () => {
