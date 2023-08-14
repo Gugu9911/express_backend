@@ -16,6 +16,10 @@ const NoteSchema = new mongoose.Schema({
   imageurl: [
     { type: String, }
   ],
+  likesCount: {
+    type: Number,
+    default: 0
+  },
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
