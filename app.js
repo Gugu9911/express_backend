@@ -27,7 +27,7 @@ app.use('/api/notes', notesRouter)
 app.use('/api/search', searchRouter)
 app.use('/api/notes/like', likeRouter)
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT || 5001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
