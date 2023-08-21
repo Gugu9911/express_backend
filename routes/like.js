@@ -43,5 +43,21 @@ Likerouter.get('/:noteId', async (req, res) => {
     }
   });
   
-  
+  Likerouter.get('/:noteId/user/:userId', async (req, res) => {
+    const noteId = req.params.noteId;
+    const userId = req.params.userId;
+
+    try {
+        const like = await Like.findOne({ note: noteId, user: userId });
+        if (like) {
+            return res.status(200).json({ isLiked: true });
+        } else {
+            return res.status(200).json({ isLiked: false });
+        }
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ error: "Internal Server Error" });
+    }
+});
+
 module.exports = Likerouter;
